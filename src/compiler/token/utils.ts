@@ -1,19 +1,19 @@
-import { INLINE_TOKEN_REGXP } from "./regxp.js";
-
+import { INLINE_TOKEN_REGXP } from "./regxp";
+import type { Token } from "./types";
 /**
  * 生成标题token
  * @param {String} line
  * @returns {Token[]}
  */
-export const generateHeadingTokens = (line) => {
+export const generateHeadingTokens = (line:string) => {
   let depth = 1;
-  const results = [];
+  const results: Token[] = [];
   while (line[depth] === "#" && depth < 6) {
     depth++;
   }
   results.push({
     type: "heading",
-    value: `<h${depth}>`,
+    value: `h${depth}`,
     open: true,
     isSelfClosing: false,
   });
@@ -23,7 +23,7 @@ export const generateHeadingTokens = (line) => {
   });
   results.push({
     type: "heading",
-    value: `</h${depth}>`,
+    value: `h${depth}`,
     open: false,
     isSelfClosing: false,
   });
@@ -37,12 +37,16 @@ export const generateHeadingTokens = (line) => {
  * @param {Number} endIndex 代码块结束行号
  * @returns {Token[]}
  */
-export const generateCodeBlockTokens = (lines, startIndex, endIndex) => {
-  const results = [];
-  console.log(lines[startIndex])
+export const generateCodeBlockTokens = (
+  lines: string[],
+  startIndex: number,
+  endIndex: number
+) => {
+  const results: Token[] = [];
+  console.log(lines[startIndex]);
   results.push({
     type: "codeBlock",
-    value: "<pre>",
+    value: "pre",
     open: true,
     isSelfClosing: false,
     lang: lines[startIndex].replace(/^```/, "").trim(),
@@ -55,7 +59,7 @@ export const generateCodeBlockTokens = (lines, startIndex, endIndex) => {
   }
   results.push({
     type: "codeBlock",
-    value: "</pre>",
+    value: "pre",
     open: false,
     isSelfClosing: false,
     lang: lines[startIndex].replace("```", "").trim(),
@@ -68,8 +72,8 @@ export const generateCodeBlockTokens = (lines, startIndex, endIndex) => {
  * @param {String} line
  * @returns {Token[]}
  * */
-export const generateTextTokens = (line) => {
-  const results = [];
+export const generateTextTokens = (line: string) => {
+  const results: Token[] = [];
   results.push({
     type: "text",
     value: line,
@@ -82,11 +86,11 @@ export const generateTextTokens = (line) => {
  * @param {String} line
  * @return {Token[]}
  */
-export const generateStrongTokens = (line) => {
-  const results = [];
+export const generateStrongTokens = (line: string): Token[] => {
+  const results: Token[] = [];
   results.push({
     type: "strong",
-    value: "<strong>",
+    value: "strong",
     open: true,
     isSelfClosing: false,
   });
@@ -96,7 +100,7 @@ export const generateStrongTokens = (line) => {
   });
   results.push({
     type: "strong",
-    value: "</strong>",
+    value: "strong",
     open: false,
     isSelfClosing: false,
   });
@@ -108,11 +112,11 @@ export const generateStrongTokens = (line) => {
  * @param {String} line
  * @return {Token[]}
  */
-export const generateEmphasisTokens = (line) => {
-  const results = [];
+export const generateEmphasisTokens = (line: string): Token[] => {
+  const results: Token[] = [];
   results.push({
     type: "emphasis",
-    value: "<em>",
+    value: "em",
     open: true,
     isSelfClosing: false,
   });
@@ -122,18 +126,18 @@ export const generateEmphasisTokens = (line) => {
   });
   results.push({
     type: "emphasis",
-    value: "</em>",
+    value: "em",
     open: false,
     isSelfClosing: false,
   });
   return results;
 };
 
-export const generateInlineCodeTokens = (line) => {
-  const results = [];
+export const generateInlineCodeTokens = (line: string) => {
+  const results: Token[] = [];
   results.push({
     type: "inlineCode",
-    value: "<code>",
+    value: "code",
     open: true,
     isSelfClosing: false,
   });
@@ -143,32 +147,32 @@ export const generateInlineCodeTokens = (line) => {
   });
   results.push({
     type: "inlineCode",
-    value: "</code>",
+    value: "code",
     open: false,
     isSelfClosing: false,
   });
   return results;
 };
 
-export const generateParagraphTokens = (line) => {
-  const results = [];
+export const generateParagraphTokens = (line: string) => {
+  const results: Token[] = [];
   results.push({
     type: "paragraph",
-    value: "<p>",
+    value: "p",
     open: true,
     isSelfClosing: false,
   });
 
   // 记录多个行内元素的起始和结束位置 i.e: [{startIndex: 0, endIndex: 0, type: 'strong' }]
-  const indexs = [];
+  const indexs: { startIndex: number; endIndex: number; type: string }[] = [];
   for (const key in INLINE_TOKEN_REGXP) {
-    const regxp = INLINE_TOKEN_REGXP[key];
+    const tokenKey = key as keyof typeof INLINE_TOKEN_REGXP;
+    const regxp = INLINE_TOKEN_REGXP[tokenKey];
     let matches = regxp.exec(line);
     while (matches) {
-
       // ! 注意，若是已找到最后一个匹配，matches.lastIndex会为undefined
       const startIndex = matches.index;
-      const endIndex = matches.lastIndex || line.length;
+      const endIndex = regxp.lastIndex || line.length;
 
       // 不能有重叠的匹配
       if (
@@ -193,7 +197,7 @@ export const generateParagraphTokens = (line) => {
   let i = 0;
   for (let j = 0; j < indexs.length; j++) {
     const { startIndex, endIndex, type } = indexs[j];
-    console.log(indexs[j])
+    console.log(indexs[j]);
     // 处理简单文本token
     const plainText = line.substring(i, startIndex);
     if (plainText) {
@@ -202,22 +206,16 @@ export const generateParagraphTokens = (line) => {
     const inline = line.substring(startIndex, endIndex);
     switch (type) {
       case "strong":
-        results.push(
-          ...generateStrongTokens(inline)
-        );
+        results.push(...generateStrongTokens(inline));
         break;
       case "emphasis":
-        results.push(
-          ...generateEmphasisTokens(inline)
-        );
+        results.push(...generateEmphasisTokens(inline));
         break;
       case "inlineCode":
-        results.push(
-          ...generateInlineCodeTokens(inline)
-        );
+        results.push(...generateInlineCodeTokens(inline));
         break;
     }
-    i = endIndex
+    i = endIndex;
   }
   // 处理最后一个文本token
   const plainText = line.substring(i);
@@ -227,7 +225,7 @@ export const generateParagraphTokens = (line) => {
 
   results.push({
     type: "paragraph",
-    value: "</p>",
+    value: "p",
     open: false,
     isSelfClosing: false,
   });
