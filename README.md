@@ -25,3 +25,6 @@ const hmd = new Hmd();
 hmd.use(htmlEscape);
 const html = hmd.complie("<script>xss</script>");
 ```
+---
+
+(GitHub)[https://github.com/AechWhyL/hmd]
